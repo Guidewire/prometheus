@@ -1,0 +1,109 @@
+---
+- name: check init-system
+  fail: msg="Unsupported init-system {{ blackbox_service_mgr }}"
+  when: "{{ blackbox_service_mgr not in ['systemd', 'upstart', 'sysvinit'] }}"
+
+- name: check OS family
+  fail: msg="Unsupported OS {{ ansible_os_family }}"
+  when: "{{ ansible_os_family not in ['RedHat', 'Debian'] }}"
+
+- name: define blackbox_install_version variable
+  set_fact:
+    blackbox_install_version: "{{ blackbox_version }}"
+
+- name: create blackbox_exporter group
+  group: name="{{ blackbox_group }}"  state=present
+
+- name: create blackbox_exporter user
+  user:
+    name: "{{ blackbox_user }}"
+    group: "{{ blackbox_group }}"
+    createhome: no
+    shell: /sbin/nologin
+    comment: "blackbox_exporter user"
+    state: present
+
+- name: mkdir for config
+  file:
+    path: "{{ blackbox_config_folder }}"
+    state: directory
+    owner: "{{ blackbox_user }}"
+    group: "{{ blackbox_group }}"
+    mode: "u=rwx,g=rx,o="
+
+- block:
+   - name: get latest release
+     uri:
+         url: https://api.github.com/repos/prometheus/blackbox_exporter/releases/latest
+         return_content: yes
+     register: latest
+
+   - name: show latest version
+     debug: msg="{{ latest.json.tag_name }}"
+
+   - name: set blackbox_install_version to latest
+     set_fact:
+       blackbox_install_version: "{{ latest.json.tag_name|replace('v', '') }}"
+  when: "{{ blackbox_install_version == 'latest' }}"
+
+- name: download and untar binary
+  unarchive:
+    src:  "https://github.com/prometheus/blackbox_exporter/releases/download/v{{ blackbox_install_version }}/blackbox_exporter-{{ blackbox_install_version }}.{{ blackbox_platform_suffix }}.tar.gz"
+    dest: "{{ blackbox_install_path }}"
+    copy: no
+    list_files: yes
+  register: result
+
+- name: add systemd service
+  template:
+    src: etc/systemd/system/blackbox_exporter.service.j2
+    dest: /etc/systemd/system/blackbox_exporter.service
+  when: "{{ blackbox_service_mgr == 'systemd' }}"
+  notify:
+    - systemd restart blackbox_exporter
+
+- name: add init-script
+  template:
+    src: etc/init.d/blackbox_exporter.{{ ansible_os_family|lower }}.sh.j2
+    dest: /etc/init.d/blackbox_exporter
+    mode: "0755"
+  when: "{{ blackbox_service_mgr in ['upstart', 'sysvinit'] }}"
+  notify:
+    - initd restart blackbox_exporter
+
+- name: create symlink for blackbox folder
+  file:
+    src: "{{ result.files[0] }}"
+    dest: "{{ blackbox_install_path }}/blackbox_exporter"
+    state: link
+    force: yes
+  when: not ansible_check_mode
+  notify:
+    - "{{ 'systemd' if blackbox_service_mgr == 'systemd' else 'initd' }} restart blackbox_exporter"
+
+- name: add defaults options
+  template:
+    src: etc/default/blackbox_exporter
+    dest: /etc/default/blackbox_exporter
+  notify:
+    - "{{ 'systemd' if blackbox_service_mgr == 'systemd' else 'initd' }} restart blackbox_exporter"
+
+- name: add configuration file
+  template:
+    src:  "{{ blackbox_config_template_path }}"
+    dest: "{{ blackbox_config_folder }}/blackbox_exporter.yml"
+    owner: "{{ blackbox_user }}"
+    group: "{{ blackbox_group }}"
+  notify:
+    - "{{ 'systemd' if blackbox_service_mgr == 'systemd' else 'initd' }} restart blackbox_exporter"
+
+- name: start blackbox_exporter
+  service:
+    name: blackbox_exporter
+    state: started
+    enabled: yes
+
+- name: flush handlers
+  meta: flush_handlers
+
+- include: tests.yml

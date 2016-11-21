@@ -1,0 +1,4 @@
+blackbox_logs_path: /var/log
+blackbox_pid_path: /var/run/blackbox_exporter
+blackbox_platform_suffix: linux-amd64
+blackbox_service_mgr: "{{ ansible_service_mgr }}"

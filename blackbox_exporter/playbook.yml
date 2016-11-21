@@ -1,0 +1,21 @@
+---
+- hosts: all
+  gather_facts: no
+  pre_tasks:
+    - name: install python2
+      raw: test -e /usr/bin/python || apt install -y python-minimal
+      changed_when: false
+    - name: gather facts
+      setup:
+  tasks:
+    - name: install libselinux-python binary for ansible to work
+      yum: name=libselinux-python state=present
+      when: "{{ ansible_pkg_mgr == 'yum' and not ansible_selinux }}"
+
+- hosts: all
+  roles:
+    - role: blackbox_exporter
+
+# - hosts: all
+#   roles:
+#     - { role: blackbox_exporter, blackbox_version: 0.2.0, blackbox_config_template_path: ../blackbox.yml, blackbox_user: blkb }

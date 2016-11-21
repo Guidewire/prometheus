@@ -1,0 +1,8 @@
+.venv-ansible
+*.retry
+*.log
+.molecule
+.vagrant
+requirements.txt
+env-setup.sh
+blackbox.yml
