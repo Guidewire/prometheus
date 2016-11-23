@@ -1,0 +1,5 @@
+prometheus_db_path:         /var/lib/prometheus
+prometheus_log_path:        /var/log/prometheus
+prometheus_pid_path:        /var/run/prometheus
+prometheus_platform_suffix: linux-amd64
+prometheus_service_mgr:     "{{ ansible_service_mgr }}"

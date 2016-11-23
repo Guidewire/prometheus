@@ -1,0 +1,6 @@
+PROMETHEUS_OPTS="-config.file {{ prometheus_config_folder }}/prometheus.yml \
+                 -storage.local.path {{ prometheus_db_path }}/data \
+                 -alertmanager.url {{ prometheus_alertmanager_url }} \
+                 -web.console.templates {{ prometheus_install_path }}/prometheus/consoles \
+                 -web.console.libraries {{ prometheus_install_path }}/prometheus/console_libraries"
+START=yes

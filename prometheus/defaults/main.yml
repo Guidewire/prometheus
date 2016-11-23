@@ -1,0 +1,20 @@
+---
+prometheus_user:   prometheus
+prometheus_group:  prometheus
+
+# folder to download and untar Prometheus' binary
+prometheus_install_path:          /opt
+# folder to store configuration files
+prometheus_config_folder:         /etc/prometheus
+# specify path to configuration file if you're not going to use a default one
+prometheus_config_templates_path: "{{ role_path }}/templates/prometheus_default"
+# folder to store rules
+prometheus_rule_path:             "{{ prometheus_config_folder }}/rules"
+
+# specify release version like '1.3.1' or use 'latest', the tarball will be downloaded directly from github releases page
+prometheus_version:               latest
+
+# <ip>:<port> of alert manager, if you don't use alert manager, just leave this setting as is
+prometheus_alertmanager_url:      "http://127.0.0.1:9093"
+# <ip>:<port> to listen at
+prometheus_listen_address:        "127.0.0.1:9090"

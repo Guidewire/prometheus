@@ -1,0 +1,74 @@
+---
+  ansible:
+    # verbose: true
+    diff: true
+
+  molecule:
+    test:
+      sequence:
+        - destroy
+        - syntax
+        - create
+        - converge
+        # - idempotence
+        # - verify
+
+  driver:
+    name: vagrant
+  vagrant:
+    platforms:
+      - name: centos/7
+        box: centos/7
+
+      - name: centos/6
+        box: centos/6
+
+      - name: ubuntu/xenial64
+        box: ubuntu/xenial64
+
+      - name: ubuntu/trusty64
+        box: ubuntu/trusty64
+
+      - name: debian/jessie64
+        box: debian/jessie64
+
+      - name: debian/wheezy64
+        box: debian/wheezy64
+
+    providers:
+      - name: virtualbox
+        type: virtualbox
+        options:
+          memory: 512
+          cpus: 1
+
+    instances:
+      - name: centos7
+        platform: centos/7
+        ansible_groups:
+          - vagrant
+
+      - name: centos6
+        platform: centos/6
+        ansible_groups:
+          - vagrant
+
+      - name: xenial64
+        platform: ubuntu/xenial64
+        ansible_groups:
+          - vagrant
+
+      - name: trusty64
+        platform: ubuntu/trusty64
+        ansible_groups:
+          - vagrant
+
+      - name: jessie64
+        platform: debian/jessie64
+        ansible_groups:
+          - vagrant
+
+      - name: wheezy64
+        platform: debian/wheezy64
+        ansible_groups:
+          - vagrant

@@ -1,0 +1,172 @@
+---
+- name: check init-system
+  fail: msg="unsupported init-system {{ prometheus_service_mgr }}"
+  when: "{{ prometheus_service_mgr not in ['systemd', 'upstart', 'sysvinit'] }}"
+
+- name: check OS family
+  fail: msg="unsupported OS {{ ansible_os_family }}"
+  when: "{{ ansible_os_family not in ['RedHat', 'Debian'] }}"
+
+- name: install dependencies
+  apt: name={{ item }} update_cache=yes cache_valid_time=86400
+  with_items:
+      - python-httplib2
+  when: "{{ ansible_os_family == 'Debian' }}"
+
+- name: define prometheus_install_version variable
+  set_fact:
+    prometheus_install_version: "{{ prometheus_version }}"
+
+- name: create prometheus group
+  group: name={{ prometheus_group }}  state=present
+
+- name: create prometheus user
+  user:
+    name: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    createhome: no
+    shell: /sbin/nologin
+    comment: "Prometheus User"
+    state: present
+
+- stat:
+    path: "{{ prometheus_log_path }}"
+  register: folder
+
+- stat:
+    path: "{{ prometheus_log_path }}/prometheus.log"
+  register: file
+
+- name: folder before chown
+  debug: msg="{{ folder }}"
+
+- name: file before chown
+  debug: msg="{{ file }}"
+
+- name: mkdir for general cases
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    # mode: "u=rwx,g=rx,o="
+    recurse: yes
+  with_items:
+    - "{{ prometheus_config_folder }}"
+    - "{{ prometheus_db_path }}"
+    - "{{ prometheus_log_path }}"
+    - "{{ prometheus_pid_path }}"
+
+- stat:
+    path: "{{ prometheus_log_path }}"
+  register: folder_new
+
+- stat:
+    path: "{{ prometheus_log_path }}/prometheus.log"
+  register: file_new
+
+- name: folder before chown
+  debug: msg="{{ folder_new }}"
+
+- name: file before chown
+  debug: msg="{{ file_new }}"
+
+- name: ensure {{ prometheus_install_path }} exists
+  file: dest="{{ prometheus_install_path }}" state=directory
+
+- block:
+    - name: get latest release
+      uri:
+          url: https://api.github.com/repos/prometheus/prometheus/releases/latest
+          return_content: yes
+      register: latest
+
+    - name: show latest version
+      debug: msg="{{ latest.json.tag_name }}"
+
+    - name: set prometheus_install_version to latest
+      set_fact:
+          prometheus_install_version: "{{ latest.json.tag_name|replace('v','') }}"
+  when: "{{ prometheus_install_version == 'latest' }}"
+
+- name: download and untar prometheus tarball
+  unarchive:
+    src: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_install_version }}/prometheus-{{ prometheus_install_version }}.{{ prometheus_platform_suffix }}.tar.gz"
+    dest: "{{ prometheus_install_path }}"
+    copy: no
+    list_files: yes
+  register: result
+
+- name: add systemd service
+  template: src="etc/systemd/system/prometheus.service.j2"  dest="/etc/systemd/system/prometheus.service"
+  when: "{{ prometheus_service_mgr == 'systemd' }}"
+  notify: systemd restart prometheus
+
+- name: add init-script
+  template: src="etc/init.d/prometheus.sysvinit.{{ ansible_os_family|lower }}.sh.j2"  dest="/etc/init.d/prometheus"  mode="a+x"
+  when: "{{ prometheus_service_mgr in ['upstart', 'sysvinit'] }}"
+  notify: initd restart prometheus
+
+- name: create symlink for prometheus folder
+  file:
+    src: "{{ result.files[0] }}"
+    dest: "{{ prometheus_install_path }}/prometheus"
+    state: link
+    force: yes
+  when: not ansible_check_mode
+  notify: "{{ 'systemd' if prometheus_service_mgr == 'systemd' else 'initd' }} restart prometheus"
+
+- name: add defaults options
+  template: src="etc/default/prometheus.j2"
+            dest=/etc/default/prometheus
+  notify: "{{ 'systemd' if prometheus_service_mgr == 'systemd' else 'initd' }} restart prometheus"
+
+- name: get list of local config files with ansible
+  find:
+    path: "{{ prometheus_config_templates_path }}"
+    recurse: yes
+  register: list_local
+  become: no
+  connection: local
+
+- name: get list of local directories with ansible
+  find:
+    path: "{{ prometheus_config_templates_path }}"
+    file_type: directory
+    recurse: yes
+  register: list_config_dirs
+  become: no
+  connection: local
+
+- name: create required dirs
+  file: dest="{{ prometheus_config_folder }}/{{ item.path|regex_replace('^'+prometheus_config_templates_path+'/', '') }}" state=directory owner="{{ prometheus_user }}" group="{{ prometheus_group }}"
+  with_items: "{{ list_config_dirs.files }}"
+
+- name: get list of remote config files with ansible
+  find:
+    path: "{{ prometheus_config_folder }}"
+  register: list_remote
+
+- name: put prometeus config files
+  template: dest="{{ prometheus_config_folder }}/{{ item }}" src="{{ prometheus_config_templates_path }}/{{ item }}" owner="{{ prometheus_user }}" group="{{ prometheus_group }}"
+  with_items: "{{ list_local.files|map(attribute='path')|map('regex_replace','^'+prometheus_config_templates_path+'/','')|list }}"
+  notify:
+      - prometheus check rules
+      - prometheus check config
+      - "{{ 'systemd' if prometheus_service_mgr == 'systemd' else 'initd' }} reload prometheus"
+
+- name: remove remote configs not presented locally
+  file: dest={{ prometheus_config_folder }}/{{ item }} state=absent
+  with_items: "{{ list_remote.files|map(attribute='path')|list|difference(list_local.files|map(attribute='path')|list) }}"
+  notify:
+      - prometheus check rules
+      - prometheus check config
+      - "{{ 'systemd' if prometheus_service_mgr == 'systemd' else 'initd' }} reload prometheus"
+
+- name: start prometheus
+  service: name=prometheus state=started enabled=yes
+
+- name: flush handlers
+  meta: flush_handlers
+
+- include: tests.yml

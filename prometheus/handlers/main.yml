@@ -1,0 +1,34 @@
+---
+- name: initd restart prometheus
+  service: name=prometheus state=restarted
+
+- name: initd reload prometheus
+  service: name=prometheus state=reloaded
+
+- name: systemd restart prometheus
+  systemd: name=prometheus state=restarted daemon_reload=yes
+
+- name: systemd reload prometheus
+  systemd: name=prometheus state=reloaded daemon_reload=yes
+
+- name: prometheus check rules
+  shell: "{{ prometheus_install_path }}/prometheus/promtool check-rules {{ prometheus_rule_path }}/*.conf"
+  register: prometheus_check_rules
+  changed_when: prometheus_check_rules.rc !=0
+  failed_when: no
+  notify: prometheus show rules errors
+
+- name: prometheus show rules errors
+  debug: var=prometheus_check_rules.stderr.split('\n')
+  failed_when: yes
+
+- name: prometheus check config
+  shell: "{{ prometheus_install_path }}/prometheus/promtool check-config {{ prometheus_config_folder }}/prometheus.yml"
+  register: prometheus_check_conf
+  changed_when: prometheus_check_conf.rc !=0
+  failed_when: no
+  notify: prometheus show conf errors
+
+- name: prometheus show conf errors
+  debug: var=prometheus_check_conf.stderr.split('\n')
+  failed_when: yes
