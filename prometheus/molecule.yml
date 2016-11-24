@@ -10,7 +10,7 @@
         - syntax
         - create
         - converge
-        # - idempotence
+        - idempotence
         # - verify
 
   driver:

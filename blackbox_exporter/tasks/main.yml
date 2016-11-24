@@ -1,10 +1,10 @@
 ---
 - name: check init-system
-  fail: msg="Unsupported init-system {{ blackbox_service_mgr }}"
+  fail: msg="unsupported init-system {{ blackbox_service_mgr }}"
   when: "{{ blackbox_service_mgr not in ['systemd', 'upstart', 'sysvinit'] }}"
 
 - name: check OS family
-  fail: msg="Unsupported OS {{ ansible_os_family }}"
+  fail: msg="unsupported OS {{ ansible_os_family }}"
   when: "{{ ansible_os_family not in ['RedHat', 'Debian'] }}"
 
 - name: define blackbox_install_version variable
@@ -25,11 +25,18 @@
 
 - name: mkdir for config
   file:
-    path: "{{ blackbox_config_folder }}"
+    path: "{{ item }}"
     state: directory
     owner: "{{ blackbox_user }}"
     group: "{{ blackbox_group }}"
     mode: "u=rwx,g=rx,o="
+  with_items:
+    - "{{ blackbox_log_path }}"
+    - "{{ blackbox_pid_path }}"
+    - "{{ blackbox_config_folder }}"
+
+- name: ensure {{ blackbox_install_path }} exists
+  file: dest="{{ blackbox_install_path }}" state=directory
 
 - block:
    - name: get latest release
@@ -59,8 +66,7 @@
     src: etc/systemd/system/blackbox_exporter.service.j2
     dest: /etc/systemd/system/blackbox_exporter.service
   when: "{{ blackbox_service_mgr == 'systemd' }}"
-  notify:
-    - systemd restart blackbox_exporter
+  notify: systemd restart blackbox_exporter
 
 - name: add init-script
   template:
@@ -68,8 +74,7 @@
     dest: /etc/init.d/blackbox_exporter
     mode: "0755"
   when: "{{ blackbox_service_mgr in ['upstart', 'sysvinit'] }}"
-  notify:
-    - initd restart blackbox_exporter
+  notify: initd restart blackbox_exporter
 
 - name: create symlink for blackbox folder
   file:
@@ -78,15 +83,13 @@
     state: link
     force: yes
   when: not ansible_check_mode
-  notify:
-    - "{{ 'systemd' if blackbox_service_mgr == 'systemd' else 'initd' }} restart blackbox_exporter"
+  notify: "{{ 'systemd' if blackbox_service_mgr == 'systemd' else 'initd' }} restart blackbox_exporter"
 
 - name: add defaults options
   template:
-    src: etc/default/blackbox_exporter
+    src: etc/default/blackbox_exporter.j2
     dest: /etc/default/blackbox_exporter
-  notify:
-    - "{{ 'systemd' if blackbox_service_mgr == 'systemd' else 'initd' }} restart blackbox_exporter"
+  notify: "{{ 'systemd' if blackbox_service_mgr == 'systemd' else 'initd' }} restart blackbox_exporter"
 
 - name: add configuration file
   template:
@@ -94,8 +97,7 @@
     dest: "{{ blackbox_config_folder }}/blackbox_exporter.yml"
     owner: "{{ blackbox_user }}"
     group: "{{ blackbox_group }}"
-  notify:
-    - "{{ 'systemd' if blackbox_service_mgr == 'systemd' else 'initd' }} restart blackbox_exporter"
+  notify: "{{ 'systemd' if blackbox_service_mgr == 'systemd' else 'initd' }} restart blackbox_exporter"
 
 - name: start blackbox_exporter
   service:

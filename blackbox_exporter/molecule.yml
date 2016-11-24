@@ -46,7 +46,7 @@
         platform: centos/7
         ansible_groups:
           - vagrant
-      #
+
       - name: centos6
         platform: centos/6
         ansible_groups:

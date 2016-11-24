@@ -22,7 +22,7 @@ In some cases, you should manually install _python2_ (absent in Ubuntu 16.04) an
   gather_facts: no
   pre_tasks:
     - name: install python2
-      raw: test -e /usr/bin/python || apt install -y python-minimal
+      raw: test -e /usr/bin/python || (apt update && apt install -y python-minimal)
       changed_when: false
     - name: gather facts
       setup:

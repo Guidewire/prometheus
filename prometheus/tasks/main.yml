@@ -29,20 +29,6 @@
     comment: "Prometheus User"
     state: present
 
-- stat:
-    path: "{{ prometheus_log_path }}"
-  register: folder
-
-- stat:
-    path: "{{ prometheus_log_path }}/prometheus.log"
-  register: file
-
-- name: folder before chown
-  debug: msg="{{ folder }}"
-
-- name: file before chown
-  debug: msg="{{ file }}"
-
 - name: mkdir for general cases
   file:
     path: "{{ item }}"
@@ -56,20 +42,6 @@
     - "{{ prometheus_db_path }}"
     - "{{ prometheus_log_path }}"
     - "{{ prometheus_pid_path }}"
-
-- stat:
-    path: "{{ prometheus_log_path }}"
-  register: folder_new
-
-- stat:
-    path: "{{ prometheus_log_path }}/prometheus.log"
-  register: file_new
-
-- name: folder before chown
-  debug: msg="{{ folder_new }}"
-
-- name: file before chown
-  debug: msg="{{ file_new }}"
 
 - name: ensure {{ prometheus_install_path }} exists
   file: dest="{{ prometheus_install_path }}" state=directory

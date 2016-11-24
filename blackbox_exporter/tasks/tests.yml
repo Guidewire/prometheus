@@ -9,10 +9,10 @@
     current_version: "{{ (metrics.content.split(\n)|map('regex_search', '^blackbox_exporter_build_info{.*')|select()|list)[0]|replace('blackbox_exporter_build_info','')|regex_replace('(\\w+)=','\"\\1\"' + ':') }}"
 
 - name: show current and expected versions
-  debug: msg="Current version {{ current_version.version }}, expected version {{ blackbox_install_version }}"
+  debug: msg="current version {{ current_version.version }}, expected version {{ blackbox_install_version }}"
 
 - name: fail if current version doesn't match expected version
-  fail: msg="Version check failed"
+  fail: msg="version check failed"
   when: "{{ current_version.version|version_compare(blackbox_install_version, '!=') }}"
 
 - name: check blackbox_exporter username
@@ -24,5 +24,5 @@
   debug: msg="{{ result.stdout|truncate(15, true, '') }}"
 
 - name: fail if found username doesn't match expected username
-  fail: msg="Username check failed"
+  fail: msg="username check failed"
   when: "{{ result.stdout|truncate(15, true, '') != blackbox_user|truncate(15, true, '') }}"

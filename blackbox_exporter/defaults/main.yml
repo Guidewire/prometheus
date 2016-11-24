@@ -1,16 +1,16 @@
 ---
 blackbox_group: blackbox_exporter
-blackbox_user: blackbox_exporter
+blackbox_user:  blackbox_exporter
 
 # folder to download and untar blackbox_exporter's binary
-blackbox_install_path: /opt
+blackbox_install_path:         /opt
 # folder to store configuration files
-blackbox_config_folder: /etc/blackbox_exporter
+blackbox_config_folder:        /etc/blackbox_exporter
 # specify path to configuration file if you're not going to use a default one
-blackbox_config_template_path: ../templates/etc/blackbox_exporter/blackbox_exporter.yml.j2
+blackbox_config_template_path: "{{ role_path }}/templates/blackbox_exporter_default/blackbox_exporter.yml.j2"
 
 # specify release version like '0.3.0' or use 'latest', the tarball will be downloaded directly from github releases page
-blackbox_version: latest
+blackbox_version:              latest
 
 # <ip>:<port> to listen at
-blackbox_listen_address: "127.0.0.1:9115"
+blackbox_listen_address:       "127.0.0.1:9115"

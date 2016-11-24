@@ -61,6 +61,10 @@ service_checks() {
       exit 1
     fi
   fi
+
+  if [ -f "$LOG" ]; then
+    chown $USER:$GROUP $LOG
+  fi
 }
 
 start() {
