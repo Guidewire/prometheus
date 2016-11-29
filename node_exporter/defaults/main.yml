@@ -1,0 +1,16 @@
+---
+node_exporter_group: node_exporter
+node_exporter_user:  node_exporter
+
+# folder to download and untar node_exporter's binary
+node_exporter_install_path:         /opt
+# folder to store configuration files
+node_exporter_config_folder:        /etc/node_exporter
+# specify path to configuration file if you're not going to use a default one
+node_exporter_config_template_path: "{{ role_path }}/templates/node_exporter_default/node_exporter.yml.j2"
+
+# specify release version like '0.3.0' or use 'latest', the tarball will be downloaded directly from github releases page
+node_exporter_version:              latest
+
+# <ip>:<port> to listen at
+node_exporter_listen_address:       "127.0.0.1:9100"

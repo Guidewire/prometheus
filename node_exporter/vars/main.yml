@@ -1,0 +1,4 @@
+node_exporter_log_path:        /var/log/node_exporter
+node_exporter_pid_path:        /var/run/node_exporter
+node_exporter_platform_suffix: linux-amd64
+node_exporter_service_mgr:     "{{ ansible_service_mgr }}"

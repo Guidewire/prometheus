@@ -1,0 +1,15 @@
+# -*- mode: conf -*-
+
+[Unit]
+Description=Prometheus exporter for machine metrics, written in Go with pluggable metric collectors.
+Documentation=https://github.com/prometheus/node_exporter
+After=network.target
+
+[Service]
+EnvironmentFile=/etc/default/node_exporter
+User={{ node_exporter_user }}
+ExecStart={{ node_exporter_install_path }}/node_exporter/node_exporter $NODE_EXPORTER_OPTS
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
