@@ -1,0 +1,16 @@
+---
+alertmanager_group: alertmanager
+alertmanager_user:  alertmanager
+
+# folder to download and untar alertmanager's binary
+alertmanager_install_path:         /opt
+# folder to store configuration files
+alertmanager_config_folder:        /etc/alertmanager
+# specify path to configuration file if you're not going to use a default one
+alertmanager_config_template_path: "{{ role_path }}/templates/alertmanager_default/alertmanager.yml.j2"
+
+# specify release version like '0.3.0' or use 'latest', the tarball will be downloaded directly from github releases page
+alertmanager_version:              latest
+
+# <ip>:<port> to listen at
+alertmanager_listen_address:       "127.0.0.1:9093"

@@ -90,14 +90,6 @@
     src: etc/default/node_exporter.j2
     dest: /etc/default/node_exporter
   notify: "{{ 'systemd' if node_exporter_service_mgr == 'systemd' else 'initd' }} restart node_exporter"
-#
-# - name: add configuration file
-#   template:
-#     src:  "{{ node_exporter_config_template_path }}"
-#     dest: "{{ node_exporter_config_folder }}/node_exporter.yml"
-#     owner: "{{ node_exporter_user }}"
-#     group: "{{ node_exporter_group }}"
-#   notify: "{{ 'systemd' if node_exporter_service_mgr == 'systemd' else 'initd' }} restart node_exporter"
 
 - name: start node_exporter
   service:

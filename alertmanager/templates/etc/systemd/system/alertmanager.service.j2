@@ -1,0 +1,15 @@
+# -*- mode: conf -*-
+
+[Unit]
+Description=The Alertmanager handles alerts sent by client applications such as the Prometheus server.
+Documentation=https://github.com/prometheus/alertmanager
+After=network.target
+
+[Service]
+EnvironmentFile=/etc/default/alertmanager
+User={{ alertmanager_user }}
+ExecStart={{ alertmanager_install_path }}/alertmanager/alertmanager $ALERTMANAGER_OPTS
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target

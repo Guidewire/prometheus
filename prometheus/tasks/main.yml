@@ -35,7 +35,6 @@
     state: directory
     owner: "{{ prometheus_user }}"
     group: "{{ prometheus_group }}"
-    # mode: "u=rwx,g=rx,o="
     recurse: yes
   with_items:
     - "{{ prometheus_config_folder }}"

@@ -1,0 +1,112 @@
+---
+- name: check init-system
+  fail: msg="unsupported init-system {{ alertmanager_service_mgr }}"
+  when: "{{ alertmanager_service_mgr not in ['systemd', 'upstart', 'sysvinit'] }}"
+
+- name: check OS family
+  fail: msg="unsupported OS {{ ansible_os_family }}"
+  when: "{{ ansible_os_family not in ['RedHat', 'Debian'] }}"
+
+- name: define alertmanager_install_version variable
+  set_fact:
+    alertmanager_install_version: "{{ alertmanager_version }}"
+
+- name: create alertmanager group
+  group: name="{{ alertmanager_group }}"  state=present
+
+- name: create alertmanager user
+  user:
+    name: "{{ alertmanager_user }}"
+    group: "{{ alertmanager_group }}"
+    createhome: no
+    shell: /sbin/nologin
+    comment: "alertmanager user"
+    state: present
+
+- name: mkdir for config
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ alertmanager_user }}"
+    group: "{{ alertmanager_group }}"
+    mode: "u=rwx,g=rx,o="
+  with_items:
+    - "{{ alertmanager_log_path }}"
+    - "{{ alertmanager_pid_path }}"
+    - "{{ alertmanager_config_folder }}"
+    - "{{ alertmanager_db_path }}"
+
+- name: ensure {{ alertmanager_install_path }} exists
+  file: dest="{{ alertmanager_install_path }}" state=directory
+
+- block:
+   - name: get latest release
+     uri:
+         url: https://api.github.com/repos/prometheus/alertmanager/releases/latest
+         return_content: yes
+     register: latest
+
+   - name: show latest version
+     debug: msg="{{ latest.json.tag_name }}"
+
+   - name: set alertmanager_install_version to latest
+     set_fact:
+       alertmanager_install_version: "{{ latest.json.tag_name|replace('v', '') }}"
+  when: "{{ alertmanager_install_version == 'latest' }}"
+
+- name: download and untar binary
+  unarchive:
+    src:  "https://github.com/prometheus/alertmanager/releases/download/{{ 'v' if alertmanager_install_version|version_compare('0.3.0', '>=') else '' }}{{ alertmanager_install_version }}/alertmanager-{{ alertmanager_install_version }}.{{ alertmanager_platform_suffix }}.tar.gz"
+    dest: "{{ alertmanager_install_path }}"
+    copy: no
+    list_files: yes
+  register: result
+
+- name: add systemd service
+  template:
+    src: etc/systemd/system/alertmanager.service.j2
+    dest: /etc/systemd/system/alertmanager.service
+  when: "{{ alertmanager_service_mgr == 'systemd' }}"
+  notify: systemd restart alertmanager
+
+- name: add init-script
+  template:
+    src: etc/init.d/alertmanager.{{ ansible_os_family|lower }}.sh.j2
+    dest: /etc/init.d/alertmanager
+    mode: "0755"
+  when: "{{ alertmanager_service_mgr in ['upstart', 'sysvinit'] }}"
+  notify: initd restart alertmanager
+
+- name: create symlink for alertmanager's folder
+  file:
+    src: "{{ result.files[0] }}"
+    dest: "{{ alertmanager_install_path }}/alertmanager"
+    state: link
+    force: yes
+  when: not ansible_check_mode
+  notify: "{{ 'systemd' if alertmanager_service_mgr == 'systemd' else 'initd' }} restart alertmanager"
+
+- name: add defaults options
+  template:
+    src: etc/default/alertmanager.j2
+    dest: /etc/default/alertmanager
+  notify: "{{ 'systemd' if alertmanager_service_mgr == 'systemd' else 'initd' }} restart alertmanager"
+
+- name: add configuration file
+  template:
+    src:  "{{ alertmanager_config_template_path }}"
+    dest: "{{ alertmanager_config_folder }}/alertmanager.yml"
+    owner: "{{ alertmanager_user }}"
+    group: "{{ alertmanager_group }}"
+  notify: "{{ 'systemd' if alertmanager_service_mgr == 'systemd' else 'initd' }} restart alertmanager"
+
+- name: start alertmanager
+  service:
+    name: alertmanager
+    state: started
+    enabled: yes
+
+- name: flush handlers
+  meta: flush_handlers
+
+- include: tests.yml

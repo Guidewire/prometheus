@@ -1,0 +1,28 @@
+- name: get alertmanager's metrics
+  uri:
+    url: "http://{{ alertmanager_listen_address }}/metrics"
+    return_content: yes
+  register: metrics
+
+- name: define current_version
+  set_fact:
+    current_version: "{{ (metrics.content.split(\n)|map('regex_search', '^alertmanager_build_info{.*')|select()|list)[0]|replace('alertmanager_build_info','')|regex_replace('(\\w+)=','\"\\1\"' + ':') }}"
+
+- name: show current and expected versions
+  debug: msg="current version {{ current_version.version }}, expected version {{ alertmanager_install_version }}"
+
+- name: fail if current version doesn't match expected version
+  fail: msg="version check failed"
+  when: "{{ current_version.version|version_compare(alertmanager_install_version, '!=') }}"
+
+- name: check alertmanager username
+  shell: "ps -p $(ps aux | grep -v grep | grep alertmanager | awk '{print $2}') -o ruser="
+  register: result
+  changed_when: false
+
+- name: show found username
+  debug: msg="{{ result.stdout|truncate(15, true, '') }}"
+
+- name: fail if found username doesn't match expected username
+  fail: msg="username check failed"
+  when: "{{ result.stdout|truncate(15, true, '') != alertmanager_user|truncate(15, true, '') }}"

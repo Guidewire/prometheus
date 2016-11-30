@@ -1,0 +1,11 @@
+---
+- name: systemd restart alertmanager
+  systemd:
+    name: alertmanager
+    state: restarted
+    daemon_reload: yes
+
+- name: initd restart alertmanager
+  service:
+    name: alertmanager
+    state: restarted

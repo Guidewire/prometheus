@@ -1,0 +1,6 @@
+alertmanager_db_path:         /var/lib/alertmanager
+# log file will be created only for init-based systems, in case of systemd use "journalctl -u alertmanager"
+alertmanager_log_path:        /var/log/alertmanager
+alertmanager_pid_path:        /var/run/alertmanager
+alertmanager_platform_suffix: linux-amd64
+alertmanager_service_mgr:     "{{ ansible_service_mgr }}"

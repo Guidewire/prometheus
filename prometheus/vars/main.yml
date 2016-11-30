@@ -1,4 +1,5 @@
 prometheus_db_path:         /var/lib/prometheus
+# log file will be created only for init-based systems, in case of systemd use "journalctl -u prometheus"
 prometheus_log_path:        /var/log/prometheus
 prometheus_pid_path:        /var/run/prometheus
 prometheus_platform_suffix: linux-amd64

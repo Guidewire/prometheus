@@ -1,3 +1,4 @@
+# log file will be created only for init-based systems, in case of systemd use "journalctl -u node_exporter"
 node_exporter_log_path:        /var/log/node_exporter
 node_exporter_pid_path:        /var/run/node_exporter
 node_exporter_platform_suffix: linux-amd64

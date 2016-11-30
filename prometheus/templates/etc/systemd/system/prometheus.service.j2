@@ -6,7 +6,7 @@ Documentation=https://prometheus.io
 After=network.target
 
 [Service]
-EnvironmentFile=/etc/default/prometheus
+EnvironmentFile=-/etc/default/prometheus
 User={{ prometheus_user }}
 ExecStart={{ prometheus_install_path }}/prometheus/prometheus $PROMETHEUS_OPTS
 ExecReload=/bin/kill -HUP $MAINPID

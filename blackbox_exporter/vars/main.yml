@@ -1,3 +1,4 @@
+# log file will be created only for init-based systems, in case of systemd use "journalctl -u blackbox_exporter"
 blackbox_log_path:        /var/log/blackbox_exporter
 blackbox_pid_path:        /var/run/blackbox_exporter
 blackbox_platform_suffix: linux-amd64
