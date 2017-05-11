@@ -1,0 +1,5 @@
+# log file will be created only for init-based systems, in case of systemd use "journalctl -u pushgateway"
+pushgateway_log_path:        /var/log/pushgateway
+pushgateway_pid_path:        /var/run/pushgateway
+pushgateway_platform_suffix: linux-amd64
+pushgateway_service_mgr:     "{{ ansible_service_mgr }}"

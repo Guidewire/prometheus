@@ -1,0 +1,102 @@
+---
+- name: check init-system
+  fail: msg="unsupported init-system {{ pushgateway_service_mgr }}"
+  when: pushgateway_service_mgr not in ['systemd', 'upstart', 'sysvinit']
+
+- name: check OS family
+  fail: msg="unsupported OS {{ ansible_os_family }}"
+  when: ansible_os_family not in ['RedHat', 'Debian']
+
+- name: define pushgateway_install_version variable
+  set_fact:
+    pushgateway_install_version: "{{ pushgateway_version }}"
+
+- name: create pushgateway group
+  group: name="{{ pushgateway_group }}"  state=present
+
+- name: create pushgateway user
+  user:
+    name: "{{ pushgateway_user }}"
+    group: "{{ pushgateway_group }}"
+    createhome: no
+    shell: /sbin/nologin
+    comment: "pushgateway user"
+    state: present
+
+- name: mkdir for config
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ pushgateway_user }}"
+    group: "{{ pushgateway_group }}"
+    mode: "u=rwx,g=rx,o="
+  with_items:
+    - "{{ pushgateway_log_path }}"
+    - "{{ pushgateway_pid_path }}"
+
+- name: ensure {{ pushgateway_install_path }} exists
+  file: dest="{{ pushgateway_install_path }}" state=directory
+
+- block:
+   - name: get latest release
+     uri:
+         url: https://api.github.com/repos/prometheus/pushgateway/releases/latest
+         return_content: yes
+     register: latest
+
+   - name: show latest version
+     debug: msg="{{ latest.json.tag_name }}"
+
+   - name: set pushgateway_install_version to latest
+     set_fact:
+       pushgateway_install_version: "{{ latest.json.tag_name|replace('v', '') }}"
+  when: pushgateway_install_version == 'latest'
+
+- name: download and untar binary
+  unarchive:
+    src:  "https://github.com/prometheus/pushgateway/releases/download/{{ 'v' if pushgateway_install_version | version_compare('0.3.1', operator='>=', strict=True) else '' }}{{ pushgateway_install_version }}/pushgateway-{{ pushgateway_install_version }}.{{ pushgateway_platform_suffix }}.tar.gz"
+    dest: "{{ pushgateway_install_path }}"
+    copy: no
+    list_files: yes
+  register: result
+
+- name: add systemd service
+  template:
+    src: etc/systemd/system/pushgateway.service.j2
+    dest: /etc/systemd/system/pushgateway.service
+  when: pushgateway_service_mgr == 'systemd'
+  notify: systemd restart pushgateway
+
+- name: add init-script
+  template:
+    src: etc/init.d/pushgateway.{{ ansible_os_family|lower }}.sh.j2
+    dest: /etc/init.d/pushgateway
+    mode: "0755"
+  when: pushgateway_service_mgr in ['upstart', 'sysvinit']
+  notify: initd restart pushgateway
+
+- name: create symlink for pushgateway folder
+  file:
+    src: "{{ result.files[0] }}"
+    dest: "{{ pushgateway_install_path }}/pushgateway"
+    state: link
+    force: yes
+  when: not ansible_check_mode
+  notify: "{{ 'systemd' if pushgateway_service_mgr == 'systemd' else 'initd' }} restart pushgateway"
+
+- name: add defaults options
+  template:
+    src: etc/default/pushgateway.j2
+    dest: /etc/default/pushgateway
+  notify: "{{ 'systemd' if pushgateway_service_mgr == 'systemd' else 'initd' }} restart pushgateway"
+
+- name: start pushgateway
+  service:
+    name: pushgateway
+    state: started
+    enabled: yes
+
+- name: flush handlers
+  meta: flush_handlers
+
+- include: tests.yml

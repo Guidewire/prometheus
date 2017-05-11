@@ -1,0 +1,11 @@
+---
+pushgateway_group: pushgateway
+pushgateway_user:  pushgateway
+
+# folder to download and untar pushgateway's binary
+pushgateway_install_path:         /opt
+# specify release version like '0.3.0' or use 'latest', the tarball will be downloaded directly from github releases page
+pushgateway_version:              latest
+
+# <ip>:<port> to listen at
+pushgateway_listen_address:       "127.0.0.1:9092"

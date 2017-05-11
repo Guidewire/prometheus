@@ -1,0 +1,29 @@
+- name: get prometheus metrics
+  uri:
+    url: "http://{{ pushgateway_listen_address }}/metrics"
+    return_content: yes
+  register: metrics
+
+- name: define current_version
+  set_fact:
+    current_version: "{{ (metrics.content.split(\n)|map('regex_search', '^pushgateway_build_info{.*')|select()|list)[0]|replace('pushgateway_build_info','')|regex_replace('(\\w+)=','\"\\1\"' + ':') }}"
+
+- name: show current and expected versions
+  debug: msg="current version {{ current_version.version }}, expected version {{ pushgateway_install_version }}"
+
+- name: fail if current version doesn't match expected version
+  fail: msg="version check failed"
+  when: current_version.version|version_compare(pushgateway_install_version, '!=')
+
+- name: check pushgateway username
+  shell: "ps -p $(ps aux | grep -v grep | grep pushgateway | grep '{{ pushgateway_listen_address }}' | awk '{print $2}') -o ruser="
+  #shell: "ps -p $(cat {{ pushgateway_pid_path }}/pushgateway.pid) -o ruser="
+  register: result
+  changed_when: false
+
+- name: show found username
+  debug: msg="{{ result.stdout|truncate(15, true, '') }}"
+
+- name: fail if found username doesn't match expected username
+  fail: msg="username check failed"
+  when: result.stdout|truncate(15, true, '') != pushgateway_user|truncate(15, true, '')
