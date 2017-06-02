@@ -1,2 +1,5 @@
-NODE_EXPORTER_OPTS="-web.listen-address {{ node_exporter_listen_address }}"
+NODE_EXPORTER_OPTS="-web.listen-address {{ node_exporter_listen_address }} --collector.textfile.directory={{ node_exporter_data_dir }}
+{%- for key in node_exporter_extra_options.keys() -%}
+{{ ' ' + key }}={{ node_exporter_extra_options[key] }}
+{%- endfor %}"
 START=yes

@@ -16,7 +16,7 @@
   when: "{{ current_version.version|version_compare(node_exporter_install_version, '!=') }}"
 
 - name: check node_exporter username
-  shell: "ps -p $(ps aux | grep -v grep | grep node_exporter | awk '{print $2}') -o ruser="
+  shell: bash -c "ps -p $(ps aux | grep -v grep | grep node_exporter | awk '{print $2}') -o ruser="
   register: result
   changed_when: false
 
