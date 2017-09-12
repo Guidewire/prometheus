@@ -15,7 +15,7 @@
   when: current_version.version|version_compare(prometheus_install_version, '!=')
 
 - name: check prometheus username
-  shell: "ps -p $(ps aux | grep -v grep | grep prometheus | awk '{print $2}') -o ruser="
+  shell: "ps -o ruser= -p $(ps aux | grep -v grep | grep prometheus.yml | awk '{print $2}')"
   register: result
   changed_when: false
 
