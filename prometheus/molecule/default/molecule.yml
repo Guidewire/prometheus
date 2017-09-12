@@ -1,0 +1,32 @@
+---
+driver:
+  name: vagrant
+  provider:
+    name: virtualbox
+platforms:
+  - name: prometheus-centos7
+    box: centos/7
+  - name: prometheus-centos6
+    box: centos/6
+  - name: prometheus-ubuntu16-04
+    box: ubuntu/xenial64
+  - name: prometheus-ubuntu14-04
+    box: ubuntu/trusty64
+  - name: prometheus-debian8
+    box: debian/jessie64
+  - name: prometheus-debian7
+    box: debian/wheezy64
+provisioner:
+  name: ansible
+  lint:
+    name: ansible-lint
+  connection_options:
+    ansible_become: true
+scenario:
+  name: default
+  test_sequence:
+    - destroy
+    - create
+    - converge
+    - idempotence
+    - destroy

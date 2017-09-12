@@ -13,10 +13,10 @@
 
 - name: fail if current version doesn't match expected version
   fail: msg="version check failed"
-  when: "{{ current_version.version|version_compare(node_exporter_install_version, '!=') }}"
+  when: current_version.version|version_compare(node_exporter_install_version, '!=')
 
 - name: check node_exporter username
-  shell: bash -c "ps -p $(ps aux | grep -v grep | grep node_exporter | awk '{print $2}') -o ruser="
+  shell: "ps -p $(ps aux | grep -v grep | grep node_exporter | awk '{print $2}') -o ruser="
   register: result
   changed_when: false
 
@@ -25,4 +25,4 @@
 
 - name: fail if found username doesn't match expected username
   fail: msg="username check failed"
-  when: "{{ result.stdout|truncate(15, true, '') != node_exporter_user|truncate(15, true, '') }}"
+  when: result.stdout|truncate(15, true, '') != node_exporter_user|truncate(15, true, '')

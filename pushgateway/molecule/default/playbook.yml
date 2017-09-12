@@ -14,8 +14,4 @@
 
 - hosts: all
   roles:
-    - role: blackbox_exporter
-
-# - hosts: all
-#   roles:
-#     - { role: blackbox_exporter, blackbox_version: 0.2.0, blackbox_config_template_path: ../blackbox.yml, blackbox_user: blkb }
+    - role: pushgateway

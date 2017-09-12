@@ -10,7 +10,7 @@
   tasks:
     - name: install libselinux-python binary for ansible to work
       yum: name=libselinux-python state=present
-      when: "{{ ansible_pkg_mgr == 'yum' and not ansible_selinux }}"
+      when: ansible_pkg_mgr == 'yum' and not ansible_selinux
 
 - hosts: all
   roles:

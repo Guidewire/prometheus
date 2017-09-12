@@ -1,0 +1,32 @@
+---
+driver:
+  name: vagrant
+  provider:
+    name: virtualbox
+platforms:
+  - name: alertmanager-centos7
+    box: centos/7
+  - name: alertmanager-centos6
+    box: centos/6
+  - name: alertmanager-ubuntu16-04
+    box: ubuntu/xenial64
+  - name: alertmanager-ubuntu14-04
+    box: ubuntu/trusty64
+  - name: alertmanager-debian8
+    box: debian/jessie64
+  - name: alertmanager-debian7
+    box: debian/wheezy64
+provisioner:
+  name: ansible
+  lint:
+    name: ansible-lint
+  connection_options:
+    ansible_become: true
+scenario:
+  name: default
+  test_sequence:
+    - destroy
+    - create
+    - converge
+    - idempotence
+    - destroy
