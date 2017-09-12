@@ -17,7 +17,6 @@
 
 - name: check pushgateway username
   shell: "ps -p $(ps aux | grep -v grep | grep pushgateway | grep '{{ pushgateway_listen_address }}' | awk '{print $2}') -o ruser="
-  #shell: "ps -p $(cat {{ pushgateway_pid_path }}/pushgateway.pid) -o ruser="
   register: result
   changed_when: false
 

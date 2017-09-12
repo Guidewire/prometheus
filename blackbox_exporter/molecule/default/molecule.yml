@@ -1,0 +1,32 @@
+---
+driver:
+  name: vagrant
+  provider:
+    name: virtualbox
+platforms:
+  - name: blackbox-exporter-centos7
+    box: centos/7
+  - name: blackbox-exporter-centos6
+    box: centos/6
+  - name: blackbox-exporter-ubuntu16-04
+    box: ubuntu/xenial64
+  - name: blackbox-exporter-ubuntu14-04
+    box: ubuntu/trusty64
+  - name: blackbox-exporter-debian8
+    box: debian/jessie64
+  - name: blackbox-exporter-debian7
+    box: debian/wheezy64
+provisioner:
+  name: ansible
+  lint:
+    name: ansible-lint
+  connection_options:
+    ansible_become: true
+scenario:
+  name: default
+  test_sequence:
+    - destroy
+    - create
+    - converge
+    - idempotence
+    - destroy

@@ -1,11 +1,11 @@
 ---
 - name: check init-system
   fail: msg="unsupported init-system {{ blackbox_service_mgr }}"
-  when: "{{ blackbox_service_mgr not in ['systemd', 'upstart', 'sysvinit'] }}"
+  when: blackbox_service_mgr not in ['systemd', 'upstart', 'sysvinit']
 
 - name: check OS family
   fail: msg="unsupported OS {{ ansible_os_family }}"
-  when: "{{ ansible_os_family not in ['RedHat', 'Debian'] }}"
+  when: ansible_os_family not in ['RedHat', 'Debian']
 
 - name: define blackbox_install_version variable
   set_fact:
@@ -51,7 +51,7 @@
    - name: set blackbox_install_version to latest
      set_fact:
        blackbox_install_version: "{{ latest.json.tag_name|replace('v', '') }}"
-  when: "{{ blackbox_install_version == 'latest' }}"
+  when: blackbox_install_version == 'latest'
 
 - name: download and untar binary
   unarchive:
@@ -65,7 +65,7 @@
   template:
     src: etc/systemd/system/blackbox_exporter.service.j2
     dest: /etc/systemd/system/blackbox_exporter.service
-  when: "{{ blackbox_service_mgr == 'systemd' }}"
+  when: blackbox_service_mgr == 'systemd'
   notify: systemd restart blackbox_exporter
 
 - name: add init-script
@@ -73,7 +73,7 @@
     src: etc/init.d/blackbox_exporter.{{ ansible_os_family|lower }}.sh.j2
     dest: /etc/init.d/blackbox_exporter
     mode: "0755"
-  when: "{{ blackbox_service_mgr in ['upstart', 'sysvinit'] }}"
+  when: blackbox_service_mgr in ['upstart', 'sysvinit']
   notify: initd restart blackbox_exporter
 
 - name: create symlink for blackbox folder

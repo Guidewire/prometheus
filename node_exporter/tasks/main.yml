@@ -1,11 +1,11 @@
 ---
 - name: check init-system
   fail: msg="unsupported init-system {{ node_exporter_service_mgr }}"
-  when: "{{ node_exporter_service_mgr not in ['systemd', 'upstart', 'sysvinit'] }}"
+  when: node_exporter_service_mgr not in ['systemd', 'upstart', 'sysvinit']
 
 - name: check OS family
   fail: msg="unsupported OS {{ ansible_os_family }}"
-  when: "{{ ansible_os_family not in ['RedHat', 'Debian'] }}"
+  when: ansible_os_family not in ['RedHat', 'Debian']
 
 - name: define node_exporter_install_version variable
   set_fact:
@@ -51,7 +51,7 @@
    - name: set node_exporter_install_version to latest
      set_fact:
        node_exporter_install_version: "{{ latest.json.tag_name|replace('v', '') }}"
-  when: "{{ node_exporter_install_version == 'latest' }}"
+  when: node_exporter_install_version == 'latest'
 
 - name: download and untar binary
   unarchive:
@@ -65,7 +65,7 @@
   template:
     src: etc/systemd/system/node_exporter.service.j2
     dest: /etc/systemd/system/node_exporter.service
-  when: "{{ node_exporter_service_mgr == 'systemd' }}"
+  when: node_exporter_service_mgr == 'systemd'
   notify: systemd restart node_exporter
 
 - name: add init-script
@@ -73,7 +73,7 @@
     src: etc/init.d/node_exporter.{{ ansible_os_family|lower }}.sh.j2
     dest: /etc/init.d/node_exporter
     mode: "0755"
-  when: "{{ node_exporter_service_mgr in ['upstart', 'sysvinit'] }}"
+  when: node_exporter_service_mgr in ['upstart', 'sysvinit']
   notify: initd restart node_exporter
 
 - name: create symlink for node_exporter's folder
@@ -85,14 +85,14 @@
   when: not ansible_check_mode
   notify: "{{ 'systemd' if node_exporter_service_mgr == 'systemd' else 'initd' }} restart node_exporter"
 
+- name: create node_exporter data dir
+  file: dest={{ node_exporter_data_dir }} state=directory owner={{ node_exporter_user }} group={{ node_exporter_group }} mode=1777
+
 - name: add defaults options
   template:
     src: etc/default/node_exporter.j2
     dest: /etc/default/node_exporter
   notify: "{{ 'systemd' if node_exporter_service_mgr == 'systemd' else 'initd' }} restart node_exporter"
-
-- name: create node_exporter data dir
-  file: dest={{ node_exporter_data_dir }} state=directory owner={{ node_exporter_user }} group={{ node_exporter_group }} mode=1777
 
 - name: start node_exporter
   service:

@@ -1,17 +1,17 @@
 ---
 - name: check init-system
   fail: msg="unsupported init-system {{ prometheus_service_mgr }}"
-  when: "{{ prometheus_service_mgr not in ['systemd', 'upstart', 'sysvinit'] }}"
+  when: prometheus_service_mgr not in ['systemd', 'upstart', 'sysvinit']
 
 - name: check OS family
   fail: msg="unsupported OS {{ ansible_os_family }}"
-  when: "{{ ansible_os_family not in ['RedHat', 'Debian'] }}"
+  when: ansible_os_family not in ['RedHat', 'Debian']
 
 - name: install dependencies
   apt: name={{ item }} update_cache=yes cache_valid_time=86400
   with_items:
       - python-httplib2
-  when: "{{ ansible_os_family == 'Debian' }}"
+  when: ansible_os_family == 'Debian'
 
 - name: define prometheus_install_version variable
   set_fact:
@@ -58,7 +58,7 @@
     - name: set prometheus_install_version to latest
       set_fact:
           prometheus_install_version: "{{ latest.json.tag_name|replace('v','') }}"
-  when: "{{ prometheus_install_version == 'latest' }}"
+  when: prometheus_install_version == 'latest'
 
 - name: download and untar prometheus tarball
   unarchive:
@@ -70,12 +70,12 @@
 
 - name: add systemd service
   template: src="etc/systemd/system/prometheus.service.j2"  dest="/etc/systemd/system/prometheus.service"
-  when: "{{ prometheus_service_mgr == 'systemd' }}"
+  when: prometheus_service_mgr == 'systemd'
   notify: systemd restart prometheus
 
 - name: add init-script
   template: src="etc/init.d/prometheus.sysvinit.{{ ansible_os_family|lower }}.sh.j2"  dest="/etc/init.d/prometheus"  mode="a+x"
-  when: "{{ prometheus_service_mgr in ['upstart', 'sysvinit'] }}"
+  when: prometheus_service_mgr in ['upstart', 'sysvinit']
   notify: initd restart prometheus
 
 - name: create symlink for prometheus folder
@@ -92,13 +92,14 @@
             dest=/etc/default/prometheus
   notify: "{{ 'systemd' if prometheus_service_mgr == 'systemd' else 'initd' }} restart prometheus"
 
+- debug: msg="Path - {{ prometheus_config_templates_path }}"
+
 - name: get list of local config files with ansible
   find:
     path: "{{ prometheus_config_templates_path }}"
     recurse: yes
   register: list_local
-  become: no
-  connection: local
+  delegate_to: localhost
 
 - name: get list of local directories with ansible
   find:
@@ -106,8 +107,7 @@
     file_type: directory
     recurse: yes
   register: list_config_dirs
-  become: no
-  connection: local
+  delegate_to: localhost
 
 - name: create required dirs
   file: dest="{{ prometheus_config_folder }}/{{ item.path|regex_replace('^'+prometheus_config_templates_path+'/', '') }}" state=directory owner="{{ prometheus_user }}" group="{{ prometheus_group }}"

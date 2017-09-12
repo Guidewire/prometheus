@@ -1,0 +1,32 @@
+---
+driver:
+  name: vagrant
+  provider:
+    name: virtualbox
+platforms:
+  - name: pushgateway-centos7
+    box: centos/7
+  - name: pushgateway-centos6
+    box: centos/6
+  - name: pushgateway-ubuntu16-04
+    box: ubuntu/xenial64
+  - name: pushgateway-ubuntu14-04
+    box: ubuntu/trusty64
+  - name: pushgateway-debian8
+    box: debian/jessie64
+  - name: pushgateway-debian7
+    box: debian/wheezy64
+provisioner:
+  name: ansible
+  lint:
+    name: ansible-lint
+  connection_options:
+    ansible_become: true
+scenario:
+  name: default
+  test_sequence:
+    - destroy
+    - create
+    - converge
+    - idempotence
+    - destroy
