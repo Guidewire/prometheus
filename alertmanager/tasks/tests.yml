@@ -16,7 +16,7 @@
   when: current_version.version|version_compare(alertmanager_install_version, '!=')
 
 - name: check alertmanager username
-  shell: "ps -p $(ps aux | grep -v grep | grep alertmanager | awk '{print $2}') -o ruser="
+  shell: "ps -o ruser= -p $(ps aux | grep -v grep | grep alertmanager.yml | awk '{print $2}')"
   register: result
   changed_when: false
 
