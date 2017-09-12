@@ -85,6 +85,9 @@
   when: not ansible_check_mode
   notify: "{{ 'systemd' if node_exporter_service_mgr == 'systemd' else 'initd' }} restart node_exporter"
 
+- name: create node_exporter data dir
+  file: dest={{ node_exporter_data_dir }} state=directory owner={{ node_exporter_user }} group={{ node_exporter_group }} mode=1777
+
 - name: add defaults options
   template:
     src: etc/default/node_exporter.j2
