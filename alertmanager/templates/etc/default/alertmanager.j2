@@ -1,4 +1,4 @@
-ALERTMANAGER_OPTS="-config.file {{ alertmanager_config_folder }}/alertmanager.yml \
-                   -storage.path {{ alertmanager_db_path }}/data \
-                   -web.listen-address {{ alertmanager_listen_address }}"
+ALERTMANAGER_OPTS="--config.file {{ alertmanager_config_folder }}/alertmanager.yml \
+                   --storage.path {{ alertmanager_db_path }}/data \
+                   --web.listen-address {{ alertmanager_listen_address }}"
 START=yes
