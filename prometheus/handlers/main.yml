@@ -28,6 +28,15 @@
   changed_when: prometheus_check_conf.rc !=0
   failed_when: no
   notify: prometheus show conf errors
+  when: prometheus_version | version_compare('2.0.0', '<')
+
+- name: prometheus check config for version 2
+  shell: "{{ prometheus_install_path }}/prometheus/promtool check config {{ prometheus_config_folder }}/prometheus.yml"
+  register: prometheus_check_conf
+  changed_when: prometheus_check_conf.rc !=0
+  failed_when: no
+  notify: prometheus show conf errors
+  when: prometheus_version | version_compare('2.0.0', '>=')
 
 - name: prometheus show conf errors
   debug: var=prometheus_check_conf.stderr.split('\n')
