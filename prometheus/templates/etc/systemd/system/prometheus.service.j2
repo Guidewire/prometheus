@@ -10,6 +10,7 @@ EnvironmentFile=-/etc/default/prometheus
 User={{ prometheus_user }}
 ExecStart={{ prometheus_install_path }}/prometheus/prometheus $PROMETHEUS_OPTS
 ExecReload=/bin/kill -HUP $MAINPID
+LimitNOFILE=16384:32768
 
 [Install]
 WantedBy=multi-user.target
